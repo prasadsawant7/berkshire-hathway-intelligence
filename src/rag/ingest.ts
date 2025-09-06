@@ -17,8 +17,8 @@ async function ingestOne(file: string, store: PgVector) {
 
   const chunks = await doc.chunk({
     strategy: "recursive",
-    maxSize: 1400,
-    overlap: 200,
+    maxSize: 300,
+    overlap: 50,
   });
 
   const { embeddings } = await embedMany({
