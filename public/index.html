@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Berkshire Hathaway Intelligence</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .chat-container {
+        width: 90%;
+        max-width: 800px;
+        height: 80vh;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .chat-header {
+        background: linear-gradient(135deg, #2c3e50, #34495e);
+        color: white;
+        padding: 20px;
+        text-align: center;
+      }
+
+      .chat-header h1 {
+        font-size: 24px;
+        margin-bottom: 5px;
+      }
+
+      .chat-header p {
+        opacity: 0.8;
+        font-size: 14px;
+      }
+
+      .chat-messages {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .message {
+        max-width: 80%;
+        padding: 15px 20px;
+        border-radius: 20px;
+        line-height: 1.5;
+      }
+
+      .user-message {
+        background: #007bff;
+        color: white;
+        align-self: flex-end;
+        border-bottom-right-radius: 5px;
+      }
+
+      .bot-message {
+        background: #f8f9fa;
+        color: #333;
+        align-self: flex-start;
+        border-bottom-left-radius: 5px;
+        border: 1px solid #e9ecef;
+      }
+
+      .sources {
+        margin-top: 10px;
+        padding: 10px;
+        background: #e3f2fd;
+        border-radius: 10px;
+        font-size: 12px;
+        color: #1976d2;
+      }
+
+      .chat-input {
+        padding: 20px;
+        background: #f8f9fa;
+        border-top: 1px solid #e9ecef;
+        display: flex;
+        gap: 10px;
+      }
+
+      .chat-input input {
+        flex: 1;
+        padding: 15px 20px;
+        border: 2px solid #e9ecef;
+        border-radius: 25px;
+        font-size: 16px;
+        outline: none;
+        transition: border-color 0.3s;
+      }
+
+      .chat-input input:focus {
+        border-color: #007bff;
+      }
+
+      .chat-input button {
+        padding: 15px 25px;
+        background: #007bff;
+        color: white;
+        border: none;
+        border-radius: 25px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: background 0.3s;
+      }
+
+      .chat-input button:hover {
+        background: #0056b3;
+      }
+
+      .chat-input button:disabled {
+        background: #6c757d;
+        cursor: not-allowed;
+      }
+
+      .loading {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #6c757d;
+        font-style: italic;
+      }
+
+      .loading-dots {
+        display: flex;
+        gap: 3px;
+      }
+
+      .loading-dots span {
+        width: 6px;
+        height: 6px;
+        background: #6c757d;
+        border-radius: 50%;
+        animation: loading 1.4s infinite ease-in-out;
+      }
+
+      .loading-dots span:nth-child(1) {
+        animation-delay: -0.32s;
+      }
+      .loading-dots span:nth-child(2) {
+        animation-delay: -0.16s;
+      }
+
+      @keyframes loading {
+        0%,
+        80%,
+        100% {
+          transform: scale(0);
+        }
+        40% {
+          transform: scale(1);
+        }
+      }
+
+      .error {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="chat-container">
+      <div class="chat-header">
+        <h1>🏛️ Berkshire Hathaway Intelligence</h1>
+        <p>Ask questions about Warren Buffett's investment philosophy</p>
+      </div>
+
+      <div class="chat-messages" id="chatMessages">
+        <div class="message bot-message">
+          <div>
+            Hello! I'm your Berkshire Hathaway analyst. I can answer questions
+            about Warren Buffett's investment philosophy, Berkshire's business
+            strategies, and insights from the annual shareholder letters.
+          </div>
+          <div class="sources">
+            Try asking: "What does Warren Buffett think about cryptocurrency?"
+            or "How has Berkshire's investment strategy evolved?"
+          </div>
+        </div>
+      </div>
+
+      <div class="chat-input">
+        <input
+          type="text"
+          id="messageInput"
+          placeholder="Ask about Warren Buffett's investment philosophy..."
+        />
+        <button id="sendButton">Send</button>
+      </div>
+    </div>
+
+    <script>
+      const chatMessages = document.getElementById("chatMessages");
+      const messageInput = document.getElementById("messageInput");
+      const sendButton = document.getElementById("sendButton");
+
+      let isLoading = false;
+
+      function addMessage(
+        content,
+        isUser = false,
+        sources = null,
+        isError = false
+      ) {
+        const messageDiv = document.createElement("div");
+        messageDiv.className = `message ${isUser ? "user-message" : isError ? "error" : "bot-message"}`;
+
+        let html = content;
+        if (sources) {
+          html += `<div class="sources">Sources: ${sources}</div>`;
+        }
+
+        messageDiv.innerHTML = html;
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
+
+      function addLoadingMessage() {
+        const loadingDiv = document.createElement("div");
+        loadingDiv.className = "message bot-message loading";
+        loadingDiv.id = "loadingMessage";
+        loadingDiv.innerHTML = `
+                <div class="loading-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+                Analyzing Berkshire Hathaway documents...
+            `;
+        chatMessages.appendChild(loadingDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
+
+      function removeLoadingMessage() {
+        const loadingMessage = document.getElementById("loadingMessage");
+        if (loadingMessage) {
+          loadingMessage.remove();
+        }
+      }
+
+      async function sendMessage() {
+        const message = messageInput.value.trim();
+        if (!message || isLoading) return;
+
+        addMessage(message, true);
+        messageInput.value = "";
+
+        addLoadingMessage();
+        isLoading = true;
+        sendButton.disabled = true;
+
+        try {
+          const response = await fetch(
+            "http:localhost:4111/api/agents/berkshireAgent/generate",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                messages: [
+                  {
+                    role: "user",
+                    content: message,
+                  },
+                ],
+              }),
+            }
+          );
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const data = await response.json();
+          removeLoadingMessage();
+
+          console.log("Full response:", data);
+          console.log("Response text length:", data.text?.length);
+
+          let sources = null;
+          let content = data.text;
+
+          const sourcesMatch = content.match(/Sources:\s*([^]+?)(?:\n|$)/);
+          if (sourcesMatch) {
+            sources = sourcesMatch[1].trim();
+            content = content.replace(/Sources:\s*[^]+?$/, "").trim();
+          }
+
+          content = content
+            .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+            .replace(/\n/g, "<br>");
+
+          addMessage(content, false, sources);
+        } catch (error) {
+          removeLoadingMessage();
+          addMessage(
+            `Sorry, I encountered an error: ${error.message}`,
+            false,
+            null,
+            true
+          );
+          console.error("Error:", error);
+        } finally {
+          isLoading = false;
+          sendButton.disabled = false;
+        }
+      }
+
+      sendButton.addEventListener("click", sendMessage);
+      messageInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") {
+          sendMessage();
+        }
+      });
+
+      messageInput.focus();
+    </script>
+  </body>
+</html>
